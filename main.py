@@ -410,7 +410,8 @@ async def create_reservation_post(
                 "date": date,
                 "start_time": start_time,
                 "end_time": end_time,
-                "user_id": user["user_id"]
+                "user_id": user["user_id"],
+                "user_name": user["user_id"]  # 사용자 이름 (현재는 ID를 사용)
             }
             disconnected = set()
             for ws in classroom_websockets[classroom_id]:
@@ -567,6 +568,7 @@ async def cancel_reservation_post(request: Request, reservation_id: int, from_ma
                     "start_time": start_time,
                     "end_time": end_time,
                     "user_id": auto_reservation["user_id"],
+                    "user_name": auto_reservation["user_id"],  # 사용자 이름 (현재는 ID를 사용)
                     "from_waitlist": True
                 }
             else:

@@ -1,4 +1,29 @@
 {
-  "reservations": {},
-  "next_id": 24
+  "reservations": {
+    "25": {
+      "user_id": "aig0320",
+      "classroom_id": 1,
+      "date": "2025-11-02",
+      "start_time": "11:00",
+      "end_time": "12:00",
+      "participants": []
+    },
+    "27": {
+      "user_id": "admin",
+      "classroom_id": 1,
+      "date": "2025-11-02",
+      "start_time": "06:00",
+      "end_time": "07:00",
+      "participants": []
+    },
+    "28": {
+      "user_id": "alvin7187",
+      "classroom_id": 1,
+      "date": "2025-11-04",
+      "start_time": "08:00",
+      "end_time": "13:00",
+      "participants": []
+    }
+  },
+  "next_id": 29
 }
