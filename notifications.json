@@ -1,0 +1,19 @@
+{
+  "notifications": {
+    "1": {
+      "user_id": "admin",
+      "reservation_id": 11,
+      "message": "[410] 대기 신청하신 예약이 자동으로 할당되었습니다. (2025-11-02 06:00~07:00)",
+      "created_at": "2025-11-02T02:17:19.228400",
+      "read": true
+    },
+    "2": {
+      "user_id": "admin",
+      "reservation_id": 23,
+      "message": "[410] 대기 신청하신 예약이 자동으로 할당되었습니다. (2025-11-02 11:00~14:00)",
+      "created_at": "2025-11-02T04:08:31.473169",
+      "read": false
+    }
+  },
+  "next_id": 3
+}

@@ -1,0 +1,23 @@
+{
+  "classrooms": {
+    "1": {
+      "name": "410",
+      "location": "공학 5호관 4층",
+      "capacity": 50,
+      "equipment": {
+        "projector": true,
+        "whiteboard": true
+      }
+    },
+    "2": {
+      "name": "411",
+      "location": "공대 5호관 3층",
+      "capacity": 70,
+      "equipment": {
+        "projector": true,
+        "whiteboard": true
+      }
+    }
+  },
+  "next_id": 9
+}
