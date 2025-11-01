@@ -1,0 +1,368 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>내 대기 신청</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { 
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; 
+            background: #f5f5f5 url('/static/충남대 전경.jpg') center center fixed;
+            background-size: cover;
+            padding: 20px;
+            position: relative;
+        }
+        body::before {
+            content: '';
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(102, 126, 234, 0.2);
+            z-index: -1;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            position: relative;
+            z-index: 1;
+        }
+        .header {
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .btn {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            text-decoration: none;
+            display: inline-block;
+            font-weight: bold;
+        }
+        .btn-primary {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+        .btn-danger {
+            background: #e74c3c;
+            color: white;
+        }
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+        }
+        .btn-small {
+            padding: 5px 15px;
+            font-size: 14px;
+        }
+        table {
+            width: 100%;
+            background: white;
+            border-radius: 10px;
+            overflow: hidden;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        th, td {
+            padding: 15px;
+            text-align: left;
+            border-bottom: 1px solid #eee;
+        }
+        th {
+            background: #f39c12;
+            color: white;
+            font-weight: bold;
+        }
+        tr:hover {
+            background: #f8f9fa;
+        }
+        .priority-badge {
+            display: inline-block;
+            padding: 5px 12px;
+            background: #f39c12;
+            color: white;
+            border-radius: 15px;
+            font-weight: bold;
+            font-size: 13px;
+        }
+        .empty-state {
+            background: white;
+            padding: 60px;
+            border-radius: 10px;
+            text-align: center;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        .empty-state h2 {
+            color: #666;
+            margin-bottom: 20px;
+        }
+        .actions {
+            display: flex;
+            gap: 5px;
+        }
+        /* 대기 신청 취소 확인 모달 스타일 */
+        .cancel-modal-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            z-index: 9998;
+            justify-content: center;
+            align-items: center;
+            animation: fadeIn 0.3s ease-in;
+        }
+        .cancel-modal-overlay.show {
+            display: flex;
+        }
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+            }
+            to {
+                opacity: 1;
+            }
+        }
+        .cancel-modal {
+            background: white;
+            border-radius: 15px;
+            padding: 30px;
+            text-align: center;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
+            max-width: 400px;
+            width: 90%;
+            animation: popIn 0.4s ease-out;
+        }
+        @keyframes popIn {
+            from {
+                transform: scale(0.8);
+                opacity: 0;
+            }
+            to {
+                transform: scale(1);
+                opacity: 1;
+            }
+        }
+        .cancel-modal h3 {
+            color: #333;
+            font-size: 22px;
+            margin-bottom: 15px;
+            font-weight: bold;
+        }
+        .cancel-modal p {
+            color: #666;
+            font-size: 16px;
+            margin-bottom: 25px;
+        }
+        .cancel-modal-buttons {
+            display: flex;
+            gap: 10px;
+            justify-content: center;
+        }
+        .cancel-modal-buttons button {
+            padding: 10px 25px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-weight: bold;
+            font-size: 14px;
+        }
+        .cancel-modal-buttons .btn-cancel {
+            background: #95a5a6;
+            color: white;
+        }
+        .cancel-modal-buttons .btn-confirm {
+            background: #e74c3c;
+            color: white;
+        }
+        .cancel-modal-buttons button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+        }
+    </style>
+    <script>
+        // 창 닫기 시 자동 로그아웃
+        let isNavigating = false;
+        let logoutSent = false;
+        
+        function performLogout() {
+            if (logoutSent) return; // 중복 방지
+            logoutSent = true;
+            
+            // sendBeacon을 사용하여 안정적으로 로그아웃 요청 전송
+            if (navigator.sendBeacon) {
+                const formData = new FormData();
+                navigator.sendBeacon('/api/logout', formData);
+            } else {
+                // sendBeacon이 없는 경우 동기 XMLHttpRequest 사용
+                try {
+                    const xhr = new XMLHttpRequest();
+                    xhr.open('POST', '/api/logout', false); // 동기 요청
+                    xhr.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded');
+                    xhr.send();
+                } catch (err) {
+                    // 실패해도 무시 (페이지가 닫히고 있으므로)
+                }
+            }
+        }
+        
+        // 페이지 내 링크 클릭 감지 (페이지 이동 시에는 로그아웃하지 않음)
+        document.addEventListener('click', function(e) {
+            const target = e.target;
+            const link = target.closest('a');
+            if (link && link.href) {
+                const href = link.getAttribute('href');
+                if (href && (href.startsWith('/') || href.startsWith(window.location.pathname))) {
+                    isNavigating = true;
+                } else if (href && !href.startsWith('http')) {
+                    isNavigating = true;
+                }
+            }
+        });
+        
+        // 폼 제출 감지 (페이지 이동이므로 로그아웃하지 않음)
+        document.addEventListener('submit', function(e) {
+            const form = e.target;
+            if (form.tagName === 'FORM') {
+                isNavigating = true;
+            }
+        });
+        
+        // visibilitychange 이벤트: 페이지가 숨겨질 때
+        document.addEventListener('visibilitychange', function() {
+            if (document.visibilityState === 'hidden') {
+                setTimeout(function() {
+                    if (document.visibilityState === 'hidden' && !isNavigating) {
+                        performLogout();
+                    }
+                }, 100);
+            }
+        });
+        
+        // beforeunload 이벤트: 창 닫기 전
+        window.addEventListener('beforeunload', function(e) {
+            if (!isNavigating) {
+                performLogout();
+            }
+        });
+        
+        // pagehide 이벤트: 페이지가 숨겨질 때 (더 확실함)
+        window.addEventListener('pagehide', function(e) {
+            if (!isNavigating) {
+                performLogout();
+            }
+        });
+        
+        // unload 이벤트: 페이지 언로드 시 (마지막 보장)
+        window.addEventListener('unload', function(e) {
+            if (!isNavigating && !logoutSent) {
+                performLogout();
+            }
+        });
+
+        // 대기 신청 취소 모달 표시
+        let currentCancelWaitlistId = null;
+        function showCancelWaitlistModal(waitlistId) {
+            currentCancelWaitlistId = waitlistId;
+            const modal = document.getElementById('cancelWaitlistModal');
+            if (modal) {
+                modal.classList.add('show');
+            }
+        }
+
+        // 대기 신청 취소 모달 닫기
+        function closeCancelWaitlistModal() {
+            const modal = document.getElementById('cancelWaitlistModal');
+            if (modal) {
+                modal.classList.remove('show');
+            }
+            currentCancelWaitlistId = null;
+        }
+
+        // 대기 신청 취소 확인
+        function confirmCancelWaitlist() {
+            if (currentCancelWaitlistId) {
+                // 페이지 이동 플래그 설정 (로그아웃 방지)
+                isNavigating = true;
+                
+                const form = document.createElement('form');
+                form.method = 'POST';
+                form.action = '/waitlist/' + currentCancelWaitlistId + '/cancel';
+                document.body.appendChild(form);
+                form.submit();
+            }
+        }
+    </script>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>내 대기 신청</h1>
+            <div>
+                <a href="/" class="btn btn-primary">홈으로</a>
+            </div>
+        </div>
+
+        {% if waitlist_entries %}
+        <table>
+            <thead>
+                <tr>
+                    <th>강의실</th>
+                    <th>위치</th>
+                    <th>날짜</th>
+                    <th>시간</th>
+                    <th>대기 순위</th>
+                    <th>관리</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for entry in waitlist_entries %}
+                <tr>
+                    <td><strong>{{ entry.classroom_name }}</strong></td>
+                    <td>{{ entry.classroom_location }}</td>
+                    <td>{{ entry.date }}</td>
+                    <td>{{ entry.start_time }} ~ {{ entry.end_time }}</td>
+                    <td>
+                        <span class="priority-badge">{{ entry.current_priority }}순위</span>
+                    </td>
+                    <td>
+                        <div class="actions">
+                            <button type="button" class="btn btn-danger btn-small" onclick="showCancelWaitlistModal({{ entry.id }})">취소</button>
+                        </div>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        {% else %}
+        <div class="empty-state">
+            <h2>대기 신청 내역이 없습니다.</h2>
+            <p style="color: #666; margin: 20px 0;">예약이 꽉 찬 시간대에 대기 신청을 할 수 있습니다.</p>
+        </div>
+        {% endif %}
+    </div>
+
+    <!-- 대기 신청 취소 확인 모달 -->
+    <div id="cancelWaitlistModal" class="cancel-modal-overlay">
+        <div class="cancel-modal">
+            <h3>대기 신청 취소</h3>
+            <p>정말 대기 신청을 취소하시겠습니까?</p>
+            <div class="cancel-modal-buttons">
+                <button type="button" class="btn-cancel" onclick="closeCancelWaitlistModal()">아니오</button>
+                <button type="button" class="btn-confirm" onclick="confirmCancelWaitlist()">예</button>
+            </div>
+        </div>
+    </div>
+</body>
+</html>
+

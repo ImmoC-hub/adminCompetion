@@ -1,0 +1,245 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>통계</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { 
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; 
+            background: #f5f5f5 url('/static/충남대 전경.jpg') center center fixed;
+            background-size: cover;
+            padding: 20px;
+            position: relative;
+        }
+        body::before {
+            content: '';
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(102, 126, 234, 0.2);
+            z-index: -1;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            position: relative;
+            z-index: 1;
+        }
+        .header {
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .btn {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            text-decoration: none;
+            display: inline-block;
+            font-weight: bold;
+        }
+        .btn-primary {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+        }
+        .stats-card {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        .stats-card h2 {
+            color: #333;
+            margin-bottom: 20px;
+            padding-bottom: 10px;
+            border-bottom: 2px solid #667eea;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        th, td {
+            padding: 15px;
+            text-align: left;
+            border-bottom: 1px solid #eee;
+        }
+        th {
+            background: #667eea;
+            color: white;
+            font-weight: bold;
+        }
+        tr:hover {
+            background: #f8f9fa;
+        }
+        .rank-badge {
+            display: inline-block;
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            text-align: center;
+            line-height: 30px;
+            font-weight: bold;
+            margin-right: 10px;
+        }
+        .rank-badge.gold {
+            background: linear-gradient(135deg, #f39c12 0%, #e67e22 100%);
+        }
+        .rank-badge.silver {
+            background: linear-gradient(135deg, #95a5a6 0%, #7f8c8d 100%);
+        }
+        .rank-badge.bronze {
+            background: linear-gradient(135deg, #d35400 0%, #c0392b 100%);
+        }
+        .empty-state {
+            text-align: center;
+            padding: 60px;
+            color: #666;
+        }
+    </style>
+    <script>
+        // 창 닫기 시 자동 로그아웃 (모든 계정에 적용)
+        let isNavigating = false;
+        let logoutSent = false;
+        
+        function performLogout() {
+            if (logoutSent) return;
+            logoutSent = true;
+            
+            // sendBeacon을 사용하여 안정적으로 로그아웃 요청 전송
+            if (navigator.sendBeacon) {
+                const formData = new FormData();
+                navigator.sendBeacon('/api/logout', formData);
+            } else {
+                // sendBeacon이 없는 경우 동기 XMLHttpRequest 사용
+                try {
+                    const xhr = new XMLHttpRequest();
+                    xhr.open('POST', '/api/logout', false);
+                    xhr.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded');
+                    xhr.send();
+                } catch (err) {}
+            }
+        }
+        
+        // 페이지 내 링크 클릭 감지 (페이지 이동 시에는 로그아웃하지 않음)
+        document.addEventListener('click', function(e) {
+            const target = e.target;
+            const link = target.closest('a');
+            if (link && link.href) {
+                // 같은 사이트 내 링크인 경우
+                const href = link.getAttribute('href');
+                if (href && (href.startsWith('/') || href.startsWith(window.location.pathname))) {
+                    isNavigating = true;
+                } else if (href && !href.startsWith('http')) {
+                    isNavigating = true;
+                }
+            }
+        });
+        
+        // 폼 제출 감지 (페이지 이동이므로 로그아웃하지 않음)
+        document.addEventListener('submit', function(e) {
+            isNavigating = true;
+        });
+        
+        // visibilitychange 이벤트: 페이지가 숨겨질 때
+        document.addEventListener('visibilitychange', function() {
+            if (document.visibilityState === 'hidden') {
+                setTimeout(function() {
+                    if (document.visibilityState === 'hidden' && !isNavigating) {
+                        performLogout();
+                    }
+                }, 100);
+            }
+        });
+        
+        // beforeunload 이벤트: 창 닫기 전 (가장 중요)
+        window.addEventListener('beforeunload', function(e) {
+            if (!isNavigating) {
+                performLogout();
+            }
+        });
+        
+        // pagehide 이벤트: 페이지가 숨겨질 때
+        window.addEventListener('pagehide', function(e) {
+            if (!isNavigating) {
+                performLogout();
+            }
+        });
+        
+        // unload 이벤트: 페이지 언로드 시 (마지막 보장)
+        window.addEventListener('unload', function(e) {
+            if (!isNavigating && !logoutSent) {
+                performLogout();
+            }
+        });
+    </script>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>통계</h1>
+            <div>
+                <a href="/" class="btn btn-primary">홈으로</a>
+            </div>
+        </div>
+
+        <div class="stats-card">
+            <h2>🏆 가장 인기 많은 강의실 Top 5</h2>
+            
+            {% if popular_classrooms %}
+            <table>
+                <thead>
+                    <tr>
+                        <th>순위</th>
+                        <th>강의실명</th>
+                        <th>위치</th>
+                        <th>예약 횟수</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for classroom in popular_classrooms %}
+                    <tr>
+                        <td>
+                            {% if loop.index == 1 %}
+                            <span class="rank-badge gold">{{ loop.index }}</span>
+                            {% elif loop.index == 2 %}
+                            <span class="rank-badge silver">{{ loop.index }}</span>
+                            {% elif loop.index == 3 %}
+                            <span class="rank-badge bronze">{{ loop.index }}</span>
+                            {% else %}
+                            <span class="rank-badge">{{ loop.index }}</span>
+                            {% endif %}
+                        </td>
+                        <td><strong>{{ classroom.name }}</strong></td>
+                        <td>{{ classroom.location }}</td>
+                        <td><strong style="color: #667eea;">{{ classroom.count }}회</strong></td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+            {% else %}
+            <div class="empty-state">
+                <h2>통계 데이터가 없습니다.</h2>
+                <p style="margin-top: 10px;">예약 내역이 충분히 쌓이면 통계가 표시됩니다.</p>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</body>
+</html>
+

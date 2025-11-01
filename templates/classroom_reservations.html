@@ -1,0 +1,518 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ classroom.name }} 예약 현황</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { 
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; 
+            background: #f5f5f5 url('/static/충남대 전경.jpg') center center fixed;
+            background-size: cover;
+            padding: 20px;
+            position: relative;
+        }
+        body::before {
+            content: '';
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(102, 126, 234, 0.2);
+            z-index: -1;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            position: relative;
+            z-index: 1;
+        }
+        .header {
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+        }
+        .header-top {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+        .date-filter {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 5px;
+        }
+        .date-filter input {
+            padding: 8px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            font-size: 14px;
+        }
+        .date-filter button {
+            padding: 8px 15px;
+            background: #667eea;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-weight: bold;
+        }
+        .date-filter button:hover {
+            background: #5568d3;
+        }
+        .btn {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            text-decoration: none;
+            display: inline-block;
+            font-weight: bold;
+        }
+        .btn-primary {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+        .btn-success {
+            background: #27ae60;
+            color: white;
+        }
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+        }
+        .timeline-container {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        .timeline {
+            display: grid;
+            grid-template-columns: repeat(24, 1fr);
+            gap: 5px;
+            margin-top: 20px;
+        }
+        .time-slot {
+            padding: 10px 5px;
+            text-align: center;
+            border: 1px solid #eee;
+            border-radius: 3px;
+            font-size: 11px;
+            background: #f8f9fa;
+        }
+        .time-label {
+            font-weight: bold;
+            color: #666;
+        }
+        .reserved-slot {
+            background: #e74c3c;
+            color: white;
+            border-color: #c0392b;
+        }
+        .empty-state {
+            text-align: center;
+            padding: 60px;
+            color: #666;
+        }
+        .classroom-info {
+            background: #e8f4f8;
+            padding: 15px;
+            border-radius: 5px;
+            margin-bottom: 20px;
+        }
+        .classroom-info h3 {
+            color: #333;
+            margin-bottom: 5px;
+        }
+        .classroom-info p {
+            color: #666;
+            margin: 3px 0;
+        }
+        .btn-waitlist {
+            background: #f39c12;
+            color: white;
+            border: none;
+            border-radius: 3px;
+            cursor: pointer;
+            font-weight: bold;
+        }
+        .btn-waitlist:hover {
+            background: #e67e22;
+        }
+        {% if error_message %}
+        .error {
+            background: #fee;
+            color: #c33;
+            padding: 12px;
+            border-radius: 5px;
+            margin-bottom: 20px;
+            border: 1px solid #fcc;
+        }
+        {% endif %}
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <div class="header-top">
+                <h1>{{ classroom.name }} 예약 현황</h1>
+                <div>
+                    <a href="/classrooms" class="btn btn-primary">강의실 목록</a>
+                    <a href="/reservations/create?classroom_id={{ classroom_id }}" class="btn btn-success" style="margin-left: 10px;">예약 생성</a>
+                </div>
+            </div>
+            <form method="GET" action="/classrooms/{{ classroom_id }}/reservations" class="date-filter">
+                <label for="date">날짜 선택:</label>
+                <input type="date" id="date" name="date" value="{{ selected_date }}" required>
+                <button type="submit">조회</button>
+            </form>
+        </div>
+
+        <div class="timeline-container">
+            <div class="classroom-info">
+                <h3>{{ classroom.name }}</h3>
+                <p>위치: {{ classroom.location }}</p>
+                <p>수용인원: {{ classroom.capacity }}명</p>
+            </div>
+
+            <h2 style="margin-bottom: 15px;">{{ selected_date }} 타임라인</h2>
+            
+            {% if error_message %}
+            <div class="error">오류: {{ error_message }}</div>
+            {% endif %}
+            
+            {% if reservations %}
+            <div style="margin-bottom: 20px;">
+                <h3 style="color: #333; margin-bottom: 10px;">예약된 시간:</h3>
+                <table style="width: 100%; border-collapse: collapse;">
+                    <thead>
+                        <tr style="background: #667eea; color: white;">
+                            <th style="padding: 10px; text-align: left;">시간</th>
+                            <th style="padding: 10px; text-align: left;">예약자</th>
+                            <th style="padding: 10px; text-align: left;">대기 신청</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for reservation in reservations %}
+                        {% set waitlist_key = reservation.date ~ "_" ~ reservation.start_time %}
+                        {% set waitlist_entries = waitlist_by_time.get(waitlist_key, []) %}
+                        <tr style="border-bottom: 1px solid #eee;">
+                            <td style="padding: 10px;">{{ reservation.start_time }} ~ {{ reservation.end_time }}</td>
+                            <td style="padding: 10px;">{{ reservation.user_name }}</td>
+                            <td style="padding: 10px;">
+                                {% if waitlist_entries %}
+                                <span style="color: #f39c12; font-weight: bold;">대기 {{ waitlist_entries|length }}명</span>
+                                {% else %}
+                                <span style="color: #999;">없음</span>
+                                {% endif %}
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            
+            {% if waitlist_by_time %}
+            <div style="margin-bottom: 20px;">
+                <h3 style="color: #333; margin-bottom: 10px;">대기 신청 목록:</h3>
+                <table style="width: 100%; border-collapse: collapse;">
+                    <thead>
+                        <tr style="background: #f39c12; color: white;">
+                            <th style="padding: 10px; text-align: left;">시간</th>
+                            <th style="padding: 10px; text-align: left;">대기자</th>
+                            <th style="padding: 10px; text-align: left;">순위</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for waitlist_key, entries in waitlist_by_time.items() %}
+                        {% if entries %}
+                        {% for entry in entries %}
+                        <tr style="border-bottom: 1px solid #eee;">
+                            <td style="padding: 10px;">{{ entry.start_time }} ~ {{ entry.end_time }}</td>
+                            <td style="padding: 10px;">{{ entry.user_id }}</td>
+                            <td style="padding: 10px;">
+                                <span style="color: #f39c12; font-weight: bold;">{{ loop.index }}순위</span>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                        {% endif %}
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {% endif %}
+            
+            <div class="timeline">
+                {% for hour in range(24) %}
+                    {% set hour_str = "" %}
+                    {% if hour < 10 %}
+                        {% set hour_str = "0" ~ hour ~ ":00" %}
+                    {% else %}
+                        {% set hour_str = hour ~ ":00" %}
+                    {% endif %}
+                    {% set is_reserved = false %}
+                    {% set reservation_info = "" %}
+                    
+                    {% for reservation in reservations %}
+                        {% if reservation.start_time == hour_str %}
+                            {% set is_reserved = true %}
+                            {% set reservation_info = reservation.user_name %}
+                        {% endif %}
+                    {% endfor %}
+                    
+                    {% set waitlist_key = selected_date ~ "_" ~ hour_str %}
+                    {% set waitlist_for_hour = waitlist_by_time.get(waitlist_key, []) if waitlist_by_time else [] %}
+                    <div class="time-slot {% if is_reserved %}reserved-slot{% endif %}" style="position: relative;">
+                        <div class="time-label">{% if hour < 10 %}0{% endif %}{{ hour }}:00</div>
+                        {% if is_reserved %}
+                        <div style="font-size: 9px; margin-top: 3px;">예약</div>
+                        {% elif waitlist_for_hour %}
+                        <div style="font-size: 9px; margin-top: 3px; color: #f39c12;">대기 {{ waitlist_for_hour|length }}</div>
+                        {% endif %}
+                        {% if is_reserved %}
+                        <form method="POST" action="/waitlist/create" style="display: inline; margin-top: 5px;">
+                            <input type="hidden" name="classroom_id" value="{{ classroom_id }}">
+                            <input type="hidden" name="date" value="{{ selected_date }}">
+                            <input type="hidden" name="start_time" value="{{ hour_str }}">
+                            <input type="hidden" name="end_time" value="{% if hour < 23 %}{% if hour + 1 < 10 %}0{% endif %}{{ hour + 1 }}:00{% else %}00:00{% endif %}">
+                            <button type="submit" class="btn-waitlist" style="font-size: 8px; padding: 2px 5px; margin-top: 3px;" title="대기 신청">대기</button>
+                        </form>
+                        {% endif %}
+                    </div>
+                {% endfor %}
+            </div>
+            {% else %}
+            <div class="empty-state">
+                <h2>해당 날짜에 예약이 없습니다.</h2>
+                <p style="margin-top: 10px;">모든 시간대가 예약 가능합니다.</p>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+    
+    <script>
+        // 오늘 날짜를 기본값으로 설정하고 최소값 설정
+        const today = new Date().toISOString().split('T')[0];
+        const dateInput = document.getElementById('date');
+        dateInput.setAttribute('min', today);
+        
+        // WebSocket 연결 설정
+        const classroomId = {{ classroom_id }};
+        const selectedDate = "{{ selected_date }}";
+        const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+        const wsUrl = `${protocol}//${window.location.host}/ws/classroom/${classroomId}`;
+        
+        let ws = null;
+        let reconnectAttempts = 0;
+        const maxReconnectAttempts = 5;
+        
+        function connectWebSocket() {
+            try {
+                ws = new WebSocket(wsUrl);
+                
+                ws.onopen = function() {
+                    console.log('WebSocket 연결됨');
+                    reconnectAttempts = 0;
+                };
+                
+                ws.onmessage = function(event) {
+                    const data = JSON.parse(event.data);
+                    
+                    if (data.type === 'reservation_created') {
+                        // 같은 날짜의 예약만 업데이트
+                        if (data.date === selectedDate) {
+                            // 페이지 새로고침 대신 타임라인만 업데이트
+                            updateTimeline(data.start_time, data.end_time, data.user_id);
+                        }
+                    } else if (data.type === 'reservation_cancelled') {
+                        // 같은 날짜의 예약 취소만 업데이트
+                        if (data.date === selectedDate) {
+                            removeTimelineReservation(data.start_time);
+                        }
+                    }
+                };
+                
+                ws.onerror = function(error) {
+                    console.error('WebSocket 오류:', error);
+                };
+                
+                ws.onclose = function() {
+                    console.log('WebSocket 연결 종료');
+                    // 자동 재연결
+                    if (reconnectAttempts < maxReconnectAttempts) {
+                        reconnectAttempts++;
+                        setTimeout(connectWebSocket, 2000 * reconnectAttempts);
+                    }
+                };
+            } catch (error) {
+                console.error('WebSocket 연결 실패:', error);
+            }
+        }
+        
+        function updateTimeline(startTime, endTime, userId) {
+            // 타임라인 슬롯 업데이트
+            const timeline = document.querySelector('.timeline');
+            if (!timeline) return;
+            
+            // 시작 시간 슬롯 찾기
+            const slots = timeline.querySelectorAll('.time-slot');
+            slots.forEach(slot => {
+                const timeLabel = slot.querySelector('.time-label');
+                if (timeLabel && timeLabel.textContent.trim() === startTime) {
+                    // 이미 예약된 상태가 아니면 업데이트
+                    if (!slot.classList.contains('reserved-slot')) {
+                        slot.classList.add('reserved-slot');
+                        slot.innerHTML = `
+                            <div class="time-label">${startTime}</div>
+                            <div style="font-size: 9px; margin-top: 3px;">예약</div>
+                        `;
+                        slot.title = `예약됨: ${userId}`;
+                        
+                        // 테이블에도 추가
+                        const tableBody = document.querySelector('table tbody');
+                        if (tableBody) {
+                            const newRow = document.createElement('tr');
+                            newRow.style.borderBottom = '1px solid #eee';
+                            newRow.innerHTML = `
+                                <td style="padding: 10px;">${startTime} ~ ${endTime}</td>
+                                <td style="padding: 10px;">${userId}</td>
+                            `;
+                            tableBody.appendChild(newRow);
+                        }
+                        
+                        // 빈 상태 메시지 제거
+                        const emptyState = document.querySelector('.empty-state');
+                        if (emptyState) {
+                            emptyState.remove();
+                        }
+                    }
+                }
+            });
+        }
+        
+        function removeTimelineReservation(startTime) {
+            // 타임라인에서 예약 제거
+            const timeline = document.querySelector('.timeline');
+            if (!timeline) return;
+            
+            const slots = timeline.querySelectorAll('.time-slot');
+            slots.forEach(slot => {
+                const timeLabel = slot.querySelector('.time-label');
+                if (timeLabel && timeLabel.textContent.trim() === startTime) {
+                    if (slot.classList.contains('reserved-slot')) {
+                        slot.classList.remove('reserved-slot');
+                        slot.innerHTML = `
+                            <div class="time-label">${startTime}</div>
+                        `;
+                        slot.title = '예약 가능';
+                    }
+                }
+            });
+            
+            // 테이블에서도 제거
+            const tableRows = document.querySelectorAll('table tbody tr');
+            tableRows.forEach(row => {
+                const timeCell = row.querySelector('td');
+                if (timeCell && timeCell.textContent.includes(startTime)) {
+                    row.remove();
+                }
+            });
+            
+            // 예약이 없으면 빈 상태 메시지 표시
+            const tableBody = document.querySelector('table tbody');
+            const reservedSlots = timeline.querySelectorAll('.reserved-slot');
+            if (tableBody && (!tableBody.querySelector('tr') || reservedSlots.length === 0)) {
+                const timelineContainer = document.querySelector('.timeline-container');
+                if (timelineContainer && !timelineContainer.querySelector('.empty-state')) {
+                    const emptyState = document.createElement('div');
+                    emptyState.className = 'empty-state';
+                    emptyState.innerHTML = `
+                        <h2>해당 날짜에 예약이 없습니다.</h2>
+                        <p style="margin-top: 10px;">모든 시간대가 예약 가능합니다.</p>
+                    `;
+                    timeline.appendChild(emptyState);
+                }
+            }
+        }
+        
+        // 페이지 로드 시 WebSocket 연결
+        connectWebSocket();
+        
+        // 페이지 종료 시 연결 닫기 및 자동 로그아웃 (모든 계정에 적용)
+        let isNavigating = false;
+        let logoutSent = false;
+        
+        function performLogout() {
+            if (logoutSent) return;
+            logoutSent = true;
+            if (navigator.sendBeacon) {
+                const formData = new FormData();
+                navigator.sendBeacon('/api/logout', formData);
+            } else {
+                try {
+                    const xhr = new XMLHttpRequest();
+                    xhr.open('POST', '/api/logout', false);
+                    xhr.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded');
+                    xhr.send();
+                } catch (err) {}
+            }
+        }
+        
+        document.addEventListener('click', function(e) {
+            const target = e.target;
+            const link = target.closest('a');
+            if (link && link.href) {
+                const href = link.getAttribute('href');
+                if (href && (href.startsWith('/') || href.startsWith(window.location.pathname))) {
+                    isNavigating = true;
+                } else if (href && !href.startsWith('http')) {
+                    isNavigating = true;
+                }
+            }
+        });
+        document.addEventListener('submit', function(e) {
+            const form = e.target;
+            if (form.tagName === 'FORM') {
+                isNavigating = true;
+            }
+        });
+        document.addEventListener('visibilitychange', function() {
+            if (document.visibilityState === 'hidden') {
+                setTimeout(function() {
+                    if (document.visibilityState === 'hidden' && !isNavigating) {
+                        performLogout();
+                    }
+                }, 100);
+            }
+        });
+        window.addEventListener('beforeunload', function() {
+            if (ws) {
+                ws.close();
+            }
+            if (!isNavigating) {
+                performLogout();
+            }
+        });
+        window.addEventListener('pagehide', function(e) {
+            if (!isNavigating) {
+                performLogout();
+            }
+        });
+        window.addEventListener('unload', function(e) {
+            if (!isNavigating && !logoutSent) {
+                performLogout();
+            }
+        });
+    </script>
+</body>
+</html>
+

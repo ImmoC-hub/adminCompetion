@@ -1,0 +1,832 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>메인 페이지</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { 
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; 
+            background: #f5f5f5 url('/static/충남대 전경.jpg') center center fixed;
+            background-size: cover;
+            padding: 20px;
+            position: relative;
+        }
+        body::before {
+            content: '';
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(102, 126, 234, 0.2);
+            z-index: -1;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            position: relative;
+            z-index: 1;
+        }
+        .header {
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+        }
+        .button-group {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            align-items: flex-end;
+        }
+        .button-row {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+            justify-content: flex-end;
+        }
+        .user-info {
+            display: flex;
+            align-items: center;
+            gap: 20px;
+        }
+        .role-badge {
+            padding: 5px 15px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: bold;
+        }
+        .role-badge.student {
+            background: #3498db;
+            color: white;
+        }
+        .role-badge.admin {
+            background: #e74c3c;
+            color: white;
+        }
+        .btn {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            text-decoration: none;
+            display: inline-block;
+            font-weight: bold;
+        }
+        .btn-primary {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+        .btn-danger {
+            background: #e74c3c;
+            color: white;
+        }
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+        }
+        .welcome-card {
+            background: white;
+            padding: 40px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            text-align: center;
+        }
+        .welcome-card h1 {
+            color: #333;
+            margin-bottom: 20px;
+        }
+        .welcome-card p {
+            color: #666;
+            margin-bottom: 30px;
+            font-size: 18px;
+        }
+        .features {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+            margin-top: 30px;
+        }
+        .feature-card {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            text-align: center;
+        }
+        .feature-card h3 {
+            color: #333;
+            margin-bottom: 10px;
+        }
+        .feature-card p {
+            color: #666;
+        }
+        .status-panel {
+            background: white;
+            padding: 25px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+        }
+        .status-panel-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            padding-bottom: 15px;
+            border-bottom: 2px solid #f0f0f0;
+        }
+        .status-panel-header h2 {
+            color: #333;
+            margin: 0;
+        }
+        .status-table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        .status-table th,
+        .status-table td {
+            padding: 12px;
+            text-align: left;
+            border-bottom: 1px solid #eee;
+        }
+        .status-table th {
+            background: #f8f9fa;
+            color: #555;
+            font-weight: 600;
+            font-size: 13px;
+        }
+        .status-table tr:hover {
+            background: #f8f9fa;
+        }
+        .empty-status {
+            text-align: center;
+            padding: 40px;
+            color: #999;
+        }
+        .btn-success {
+            background: #27ae60;
+            color: white;
+        }
+        .priority-badge {
+            display: inline-block;
+            padding: 4px 10px;
+            background: #f39c12;
+            color: white;
+            border-radius: 12px;
+            font-size: 11px;
+            font-weight: bold;
+        }
+        .reservation-type {
+            display: inline-block;
+            padding: 4px 10px;
+            border-radius: 12px;
+            font-size: 11px;
+            font-weight: bold;
+        }
+        .reservation-type.owner {
+            background: #27ae60;
+            color: white;
+        }
+        .reservation-type.participant {
+            background: #667eea;
+            color: white;
+        }
+        .notification-icon {
+            position: relative;
+            cursor: pointer;
+            padding: 8px;
+            border-radius: 50%;
+            transition: background 0.2s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .notification-icon svg {
+            width: 20px;
+            height: 20px;
+            fill: currentColor;
+        }
+        .notification-icon:hover {
+            background: rgba(102, 126, 234, 0.1);
+        }
+        .notification-badge {
+            position: absolute;
+            top: 0;
+            right: 0;
+            background: #e74c3c;
+            color: white;
+            border-radius: 50%;
+            width: 18px;
+            height: 18px;
+            font-size: 11px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+        }
+        .notification-dropdown {
+            display: none;
+            position: absolute;
+            top: 50px;
+            right: 0;
+            background: white;
+            border-radius: 10px;
+            box-shadow: 0 5px 20px rgba(0,0,0,0.15);
+            min-width: 350px;
+            max-width: 400px;
+            max-height: 500px;
+            overflow-y: auto;
+            z-index: 1000;
+        }
+        .notification-dropdown.show {
+            display: block;
+        }
+        .notification-header {
+            padding: 15px 20px;
+            border-bottom: 1px solid #eee;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .notification-header h3 {
+            margin: 0;
+            font-size: 16px;
+            color: #333;
+        }
+        .notification-list {
+            max-height: 400px;
+            overflow-y: auto;
+        }
+        .notification-item {
+            padding: 15px 20px;
+            border-bottom: 1px solid #f0f0f0;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+        .notification-item:hover {
+            background: #f8f9fa;
+        }
+        .notification-item.unread {
+            background: #e8f4f8;
+            font-weight: 500;
+        }
+        .notification-item.unread:hover {
+            background: #d1ecf1;
+        }
+        .notification-message {
+            color: #555;
+            font-size: 14px;
+            line-height: 1.5;
+            margin-bottom: 5px;
+        }
+        .notification-time {
+            color: #999;
+            font-size: 12px;
+        }
+        .notification-empty {
+            padding: 40px 20px;
+            text-align: center;
+            color: #999;
+        }
+        .notification-footer {
+            padding: 15px 20px;
+            border-top: 1px solid #eee;
+            text-align: center;
+        }
+        .notification-footer a {
+            color: #667eea;
+            text-decoration: none;
+            font-weight: 500;
+        }
+        .notification-footer a:hover {
+            text-decoration: underline;
+        }
+        .notification-button-wrapper {
+            position: relative;
+        }
+        /* 예약 성공 팝업 스타일 */
+        .success-popup-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            z-index: 9999;
+            justify-content: center;
+            align-items: center;
+            animation: fadeIn 0.3s ease-in;
+        }
+        .success-popup-overlay.show {
+            display: flex;
+        }
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+            }
+            to {
+                opacity: 1;
+            }
+        }
+        .success-popup {
+            background: white;
+            border-radius: 20px;
+            padding: 40px;
+            text-align: center;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
+            max-width: 500px;
+            width: 90%;
+            animation: popIn 0.4s ease-out;
+            position: relative;
+        }
+        @keyframes popIn {
+            from {
+                transform: scale(0.8);
+                opacity: 0;
+            }
+            to {
+                transform: scale(1);
+                opacity: 1;
+            }
+        }
+        .success-popup img {
+            max-width: 200px;
+            height: auto;
+            margin-bottom: 20px;
+        }
+        .success-popup h2 {
+            color: #333;
+            font-size: 28px;
+            margin-bottom: 10px;
+            font-weight: bold;
+        }
+        .success-popup p {
+            color: #666;
+            font-size: 18px;
+            margin: 0;
+        }
+        /* 예약 취소 확인 모달 스타일 */
+        .cancel-modal-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            z-index: 9998;
+            justify-content: center;
+            align-items: center;
+            animation: fadeIn 0.3s ease-in;
+        }
+        .cancel-modal-overlay.show {
+            display: flex;
+        }
+        .cancel-modal {
+            background: white;
+            border-radius: 15px;
+            padding: 30px;
+            text-align: center;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
+            max-width: 400px;
+            width: 90%;
+            animation: popIn 0.4s ease-out;
+        }
+        .cancel-modal h3 {
+            color: #333;
+            font-size: 22px;
+            margin-bottom: 15px;
+            font-weight: bold;
+        }
+        .cancel-modal p {
+            color: #666;
+            font-size: 16px;
+            margin-bottom: 25px;
+        }
+        .cancel-modal-buttons {
+            display: flex;
+            gap: 10px;
+            justify-content: center;
+        }
+        .cancel-modal-buttons button {
+            padding: 10px 25px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-weight: bold;
+            font-size: 14px;
+        }
+        .cancel-modal-buttons .btn-cancel {
+            background: #95a5a6;
+            color: white;
+        }
+        .cancel-modal-buttons .btn-confirm {
+            background: #e74c3c;
+            color: white;
+        }
+        .cancel-modal-buttons button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+        }
+    </style>
+    <script>
+        // 창 닫기 시 자동 로그아웃
+        let isNavigating = false;
+        let logoutSent = false;
+        
+        function performLogout() {
+            if (logoutSent) return; // 중복 방지
+            logoutSent = true;
+            
+            // sendBeacon을 사용하여 안정적으로 로그아웃 요청 전송
+            if (navigator.sendBeacon) {
+                const formData = new FormData();
+                navigator.sendBeacon('/api/logout', formData);
+            } else {
+                // sendBeacon이 없는 경우 동기 XMLHttpRequest 사용
+                try {
+                    const xhr = new XMLHttpRequest();
+                    xhr.open('POST', '/api/logout', false); // 동기 요청
+                    xhr.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded');
+                    xhr.send();
+                } catch (err) {
+                    // 실패해도 무시 (페이지가 닫히고 있으므로)
+                }
+            }
+        }
+        
+        // 페이지 내 링크 클릭 감지 (페이지 이동 시에는 로그아웃하지 않음)
+        document.addEventListener('click', function(e) {
+            const target = e.target;
+            const link = target.closest('a');
+            if (link && link.href) {
+                // 같은 사이트 내 링크인 경우
+                const href = link.getAttribute('href');
+                if (href && (href.startsWith('/') || href.startsWith(window.location.pathname))) {
+                    isNavigating = true;
+                } else if (href && !href.startsWith('http')) {
+                    isNavigating = true;
+                }
+            }
+        });
+        
+        // 폼 제출 감지 (페이지 이동이므로 로그아웃하지 않음)
+        document.addEventListener('submit', function(e) {
+            const form = e.target;
+            if (form.tagName === 'FORM') {
+                // 폼 제출은 페이지 이동으로 간주
+                isNavigating = true;
+            }
+        });
+        
+        // visibilitychange 이벤트: 페이지가 숨겨질 때 (창 닫기 또는 탭 전환)
+        document.addEventListener('visibilitychange', function() {
+            if (document.visibilityState === 'hidden') {
+                // 짧은 시간 후에 확인하여 페이지 이동이 아닌 경우에만 로그아웃
+                setTimeout(function() {
+                    // 페이지가 여전히 숨겨져 있고, 이동 중이 아닌 경우
+                    if (document.visibilityState === 'hidden' && !isNavigating) {
+                        performLogout();
+                    }
+                }, 100);
+            }
+        });
+        
+        // beforeunload 이벤트: 창 닫기 전
+        window.addEventListener('beforeunload', function(e) {
+            // 페이지 이동이 아닌 경우에만 로그아웃
+            if (!isNavigating) {
+                performLogout();
+            }
+        });
+        
+        // pagehide 이벤트: 페이지가 숨겨질 때 (더 확실함)
+        window.addEventListener('pagehide', function(e) {
+            // 페이지 이동이 아닌 경우에만 로그아웃
+            if (!isNavigating) {
+                performLogout();
+            }
+        });
+        
+        // unload 이벤트: 페이지 언로드 시 (마지막 보장)
+        window.addEventListener('unload', function(e) {
+            if (!isNavigating && !logoutSent) {
+                performLogout();
+            }
+        });
+        
+        // 알림 드롭다운 토글
+        function toggleNotificationDropdown() {
+            const dropdown = document.getElementById('notificationDropdown');
+            dropdown.classList.toggle('show');
+        }
+        
+        // 드롭다운 외부 클릭 시 닫기
+        document.addEventListener('click', function(e) {
+            const dropdown = document.getElementById('notificationDropdown');
+            const icon = document.querySelector('.notification-icon');
+            const wrapper = document.querySelector('.notification-button-wrapper');
+            if (dropdown && wrapper && !wrapper.contains(e.target)) {
+                dropdown.classList.remove('show');
+            }
+        });
+
+        // 예약 성공 팝업 자동 닫기
+        {% if show_success_popup %}
+        document.addEventListener('DOMContentLoaded', function() {
+            const popup = document.getElementById('successPopup');
+            if (popup) {
+                // 1.5초 후 자동으로 팝업 닫기
+                setTimeout(function() {
+                    popup.classList.remove('show');
+                    // 애니메이션 완료 후 요소 제거 (선택사항)
+                    setTimeout(function() {
+                        popup.style.display = 'none';
+                    }, 300);
+                }, 1500);
+            }
+        });
+        {% endif %}
+
+        // 예약 취소 모달 표시
+        let currentCancelReservationId = null;
+        function showCancelModal(reservationId) {
+            currentCancelReservationId = reservationId;
+            const modal = document.getElementById('cancelReservationModal');
+            if (modal) {
+                modal.classList.add('show');
+            }
+        }
+
+        // 예약 취소 모달 닫기
+        function closeCancelModal() {
+            const modal = document.getElementById('cancelReservationModal');
+            if (modal) {
+                modal.classList.remove('show');
+            }
+            currentCancelReservationId = null;
+        }
+
+        // 예약 취소 확인
+        function confirmCancelReservation() {
+            if (currentCancelReservationId) {
+                // 페이지 이동 플래그 설정 (로그아웃 방지)
+                isNavigating = true;
+                
+                const form = document.createElement('form');
+                form.method = 'POST';
+                form.action = '/reservations/' + currentCancelReservationId + '/cancel';
+                // 현재 페이지가 메인 화면인지 확인하여 hidden input 추가
+                const fromMain = document.createElement('input');
+                fromMain.type = 'hidden';
+                fromMain.name = 'from_main';
+                fromMain.value = 'true';
+                form.appendChild(fromMain);
+                document.body.appendChild(form);
+                form.submit();
+            }
+        }
+
+        // 대기 신청 취소 모달 표시
+        let currentCancelWaitlistId = null;
+        function showCancelWaitlistModal(waitlistId) {
+            currentCancelWaitlistId = waitlistId;
+            const modal = document.getElementById('cancelWaitlistModal');
+            if (modal) {
+                modal.classList.add('show');
+            }
+        }
+
+        // 대기 신청 취소 모달 닫기
+        function closeCancelWaitlistModal() {
+            const modal = document.getElementById('cancelWaitlistModal');
+            if (modal) {
+                modal.classList.remove('show');
+            }
+            currentCancelWaitlistId = null;
+        }
+
+        // 대기 신청 취소 확인
+        function confirmCancelWaitlist() {
+            if (currentCancelWaitlistId) {
+                // 페이지 이동 플래그 설정 (로그아웃 방지)
+                isNavigating = true;
+                
+                const form = document.createElement('form');
+                form.method = 'POST';
+                form.action = '/waitlist/' + currentCancelWaitlistId + '/cancel';
+                // 현재 페이지가 메인 화면인지 확인하여 hidden input 추가
+                const fromMain = document.createElement('input');
+                fromMain.type = 'hidden';
+                fromMain.name = 'from_main';
+                fromMain.value = 'true';
+                form.appendChild(fromMain);
+                document.body.appendChild(form);
+                form.submit();
+            }
+        }
+    </script>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <div class="user-info">
+                <h2>환영합니다, {{ user.user_id }}님!</h2>
+                <span class="role-badge {{ user.role|lower }}">{{ user.role }}</span>
+            </div>
+            <div class="button-group">
+                <div class="button-row">
+                    <div class="notification-button-wrapper">
+                        <div class="notification-icon" onclick="toggleNotificationDropdown()" title="알림">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-bell-fill" viewBox="0 0 16 16">
+                                <path d="M8 16a2 2 0 0 0 2-2H6a2 2 0 0 0 2 2m.995-14.901a1 1 0 1 0-1.99 0A5 5 0 0 0 3 6c0 1.098-.5 6-2 7h14c-1.5-1-2-5.902-2-7 0-2.42-1.72-4.44-4.005-4.901"/>
+                            </svg>
+                            {% if unread_count > 0 %}
+                            <span class="notification-badge">{{ unread_count }}</span>
+                            {% endif %}
+                        </div>
+                        <div id="notificationDropdown" class="notification-dropdown">
+                            <div class="notification-header">
+                                <h3>알림</h3>
+                                <span style="color: #999; font-size: 12px;">{% if unread_count > 0 %}읽지 않음: {{ unread_count }}개{% else %}모두 읽음{% endif %}</span>
+                            </div>
+                            <div class="notification-list">
+                                {% if recent_notifications %}
+                                {% for notification in recent_notifications %}
+                                <div class="notification-item {% if not notification.read %}unread{% endif %}" onclick="toggleNotificationDropdown()">
+                                    <div class="notification-message">{{ notification.message }}</div>
+                                    <div class="notification-time">{{ notification.created_at[:16]|replace('T', ' ') }}</div>
+                                </div>
+                                {% endfor %}
+                                {% else %}
+                                <div class="notification-empty">
+                                    알림이 없습니다.
+                                </div>
+                                {% endif %}
+                            </div>
+                            {% if recent_notifications %}
+                            <div class="notification-footer">
+                                <a href="/notifications">전체 알림 보기 →</a>
+                            </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                    <a href="/search/classrooms" class="btn btn-primary">빈 강의실 검색</a>
+                    <a href="/classrooms" class="btn btn-primary">{% if user.role == "Admin" %}강의실 관리{% else %}강의실 조회{% endif %}</a>
+                    {% if user.role == "Admin" %}
+                    <a href="/stats" class="btn btn-primary">통계</a>
+                    {% endif %}
+                    <a href="/logout" class="btn btn-danger">로그아웃</a>
+                </div>
+            </div>
+        </div>
+
+        <!-- 내 예약 현황 (중단) -->
+        <div class="status-panel">
+            <div class="status-panel-header">
+                <h2>📅 내 예약 현황</h2>
+                <a href="/reservations/create" class="btn btn-success">예약하기</a>
+            </div>
+            {% if reservations %}
+            <table class="status-table">
+                <thead>
+                    <tr>
+                        <th>유형</th>
+                        <th>강의실</th>
+                        <th>날짜</th>
+                        <th>시간</th>
+                        <th>관리</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for reservation in reservations %}
+                    <tr>
+                        <td>
+                            {% if reservation.is_owner %}
+                            <span class="reservation-type owner">예약자</span>
+                            {% else %}
+                            <span class="reservation-type participant">참여</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            <strong>{{ reservation.classroom_name }}</strong><br>
+                            <small style="color: #999;">{{ reservation.classroom_location }}</small>
+                        </td>
+                        <td>{{ reservation.date }}</td>
+                        <td>{{ reservation.start_time }} ~ {{ reservation.end_time }}</td>
+                        <td>
+                            {% if reservation.is_owner %}
+                            <button type="button" class="btn btn-danger" style="padding: 5px 15px; font-size: 12px;" onclick="showCancelModal({{ reservation.id }})">취소</button>
+                            {% else %}
+                            <span style="color: #999; font-size: 12px;">취소 불가</span>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+            {% if reservations|length >= 5 %}
+            <div style="text-align: center; margin-top: 15px;">
+                <a href="/reservations" class="btn btn-primary" style="font-size: 13px;">전체 예약 보기 →</a>
+            </div>
+            {% endif %}
+            {% else %}
+            <div class="empty-status">
+                <p>예약 내역이 없습니다.</p>
+                <a href="/reservations/create" class="btn btn-success" style="margin-top: 10px;">예약 생성하기</a>
+            </div>
+            {% endif %}
+        </div>
+
+        <!-- 대기 신청 현황 (하단) -->
+        <div class="status-panel">
+            <div class="status-panel-header">
+                <h2>⏳ 대기 신청 현황</h2>
+            </div>
+            {% if waitlist_entries %}
+            <table class="status-table">
+                <thead>
+                    <tr>
+                        <th>강의실</th>
+                        <th>날짜</th>
+                        <th>시간</th>
+                        <th>대기 순위</th>
+                        <th>관리</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for entry in waitlist_entries %}
+                    <tr>
+                        <td>
+                            <strong>{{ entry.classroom_name }}</strong><br>
+                            <small style="color: #999;">{{ entry.classroom_location }}</small>
+                        </td>
+                        <td>{{ entry.date }}</td>
+                        <td>{{ entry.start_time }} ~ {{ entry.end_time }}</td>
+                        <td>
+                            <span class="priority-badge">{{ entry.current_priority }}순위</span>
+                        </td>
+                        <td>
+                            <button type="button" class="btn btn-danger" style="padding: 5px 15px; font-size: 12px;" onclick="showCancelWaitlistModal({{ entry.id }})">취소</button>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+            {% if waitlist_entries|length >= 5 %}
+            <div style="text-align: center; margin-top: 15px;">
+                <a href="/waitlist" class="btn btn-primary" style="font-size: 13px;">전체 대기 신청 보기 →</a>
+            </div>
+            {% endif %}
+            {% else %}
+            <div class="empty-status">
+                <p>대기 신청 내역이 없습니다.</p>
+                <p style="font-size: 13px; color: #999; margin-top: 5px;">예약이 꽉 찬 시간대에 대기 신청을 할 수 있습니다.</p>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- 예약 성공 팝업 -->
+    {% if show_success_popup %}
+    <div id="successPopup" class="success-popup-overlay show">
+        <div class="success-popup">
+            <img src="/static/차차.jpg" alt="성공">
+            <h2>예약이 성공했어요!!</h2>
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- 예약 취소 확인 모달 -->
+    <div id="cancelReservationModal" class="cancel-modal-overlay">
+        <div class="cancel-modal">
+            <h3>예약 취소</h3>
+            <p>정말 예약을 취소하시겠습니까?</p>
+            <div class="cancel-modal-buttons">
+                <button type="button" class="btn-cancel" onclick="closeCancelModal()">아니오</button>
+                <button type="button" class="btn-confirm" onclick="confirmCancelReservation()">예</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 대기 신청 취소 확인 모달 -->
+    <div id="cancelWaitlistModal" class="cancel-modal-overlay">
+        <div class="cancel-modal">
+            <h3>대기 신청 취소</h3>
+            <p>정말 대기 신청을 취소하시겠습니까?</p>
+            <div class="cancel-modal-buttons">
+                <button type="button" class="btn-cancel" onclick="closeCancelWaitlistModal()">아니오</button>
+                <button type="button" class="btn-confirm" onclick="confirmCancelWaitlist()">예</button>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

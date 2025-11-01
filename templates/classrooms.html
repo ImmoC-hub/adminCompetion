@@ -1,0 +1,270 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>강의실 관리</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { 
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; 
+            background: #f5f5f5 url('/static/충남대 전경.jpg') center center fixed;
+            background-size: cover;
+            padding: 20px;
+            position: relative;
+        }
+        body::before {
+            content: '';
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(102, 126, 234, 0.2);
+            z-index: -1;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            position: relative;
+            z-index: 1;
+        }
+        .header {
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .btn {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            text-decoration: none;
+            display: inline-block;
+            font-weight: bold;
+        }
+        .btn-primary {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+        .btn-success {
+            background: #27ae60;
+            color: white;
+        }
+        .btn-warning {
+            background: #f39c12;
+            color: white;
+        }
+        .btn-danger {
+            background: #e74c3c;
+            color: white;
+        }
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+        }
+        .btn-small {
+            padding: 5px 15px;
+            font-size: 14px;
+        }
+        table {
+            width: 100%;
+            background: white;
+            border-radius: 10px;
+            overflow: hidden;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        th, td {
+            padding: 15px;
+            text-align: left;
+            border-bottom: 1px solid #eee;
+        }
+        th {
+            background: #667eea;
+            color: white;
+            font-weight: bold;
+        }
+        tr:hover {
+            background: #f8f9fa;
+        }
+        .equipment {
+            display: flex;
+            gap: 10px;
+        }
+        .equipment-badge {
+            padding: 5px 10px;
+            background: #3498db;
+            color: white;
+            border-radius: 15px;
+            font-size: 12px;
+        }
+        .actions {
+            display: flex;
+            gap: 5px;
+        }
+        .empty-state {
+            background: white;
+            padding: 60px;
+            border-radius: 10px;
+            text-align: center;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        .empty-state h2 {
+            color: #666;
+            margin-bottom: 20px;
+        }
+    </style>
+    <script>
+        // 창 닫기 시 자동 로그아웃 (모든 계정에 적용)
+        let isNavigating = false;
+        let logoutSent = false;
+        
+        function performLogout() {
+            if (logoutSent) return;
+            logoutSent = true;
+            if (navigator.sendBeacon) {
+                const formData = new FormData();
+                navigator.sendBeacon('/api/logout', formData);
+            } else {
+                try {
+                    const xhr = new XMLHttpRequest();
+                    xhr.open('POST', '/api/logout', false);
+                    xhr.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded');
+                    xhr.send();
+                } catch (err) {}
+            }
+        }
+        
+        document.addEventListener('click', function(e) {
+            const target = e.target;
+            const link = target.closest('a');
+            if (link && link.href) {
+                const href = link.getAttribute('href');
+                if (href && (href.startsWith('/') || href.startsWith(window.location.pathname))) {
+                    isNavigating = true;
+                } else if (href && !href.startsWith('http')) {
+                    isNavigating = true;
+                }
+            }
+        });
+        document.addEventListener('submit', function(e) {
+            const form = e.target;
+            if (form.tagName === 'FORM') {
+                isNavigating = true;
+            }
+        });
+        document.addEventListener('visibilitychange', function() {
+            if (document.visibilityState === 'hidden') {
+                setTimeout(function() {
+                    if (document.visibilityState === 'hidden' && !isNavigating) {
+                        performLogout();
+                    }
+                }, 100);
+            }
+        });
+        window.addEventListener('beforeunload', function(e) {
+            if (!isNavigating) {
+                performLogout();
+            }
+        });
+        window.addEventListener('pagehide', function(e) {
+            if (!isNavigating) {
+                performLogout();
+            }
+        });
+        window.addEventListener('unload', function(e) {
+            if (!isNavigating && !logoutSent) {
+                performLogout();
+            }
+        });
+    </script>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>{% if user.role == "Admin" %}강의실 관리{% else %}강의실 조회{% endif %}</h1>
+            <div>
+                <a href="/reservations" class="btn btn-primary">내 예약</a>
+                <a href="/reservations/create" class="btn btn-primary" style="margin-left: 10px;">예약 생성</a>
+                <a href="/" class="btn btn-primary" style="margin-left: 10px;">홈으로</a>
+                {% if user.role == "Admin" %}
+                <a href="/classrooms/create" class="btn btn-success" style="margin-left: 10px;">강의실 추가</a>
+                {% endif %}
+            </div>
+        </div>
+
+        {% if classrooms %}
+        <table>
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>이름</th>
+                    <th>위치</th>
+                    <th>수용인원</th>
+                    <th>비품</th>
+                    <th>예약</th>
+                    {% if user.role == "Admin" %}
+                    <th>관리</th>
+                    {% endif %}
+                </tr>
+            </thead>
+            <tbody>
+                {% for id, classroom in classrooms.items() %}
+                <tr>
+                    <td>{{ id }}</td>
+                    <td><strong>{{ classroom.name }}</strong></td>
+                    <td>{{ classroom.location }}</td>
+                    <td>{{ classroom.capacity }}명</td>
+                    <td>
+                        <div class="equipment">
+                            {% if classroom.equipment.get("projector") %}
+                            <span class="equipment-badge">프로젝터</span>
+                            {% endif %}
+                            {% if classroom.equipment.get("whiteboard") %}
+                            <span class="equipment-badge">화이트보드</span>
+                            {% endif %}
+                            {% if not classroom.equipment.get("projector") and not classroom.equipment.get("whiteboard") %}
+                            <span style="color: #999;">없음</span>
+                            {% endif %}
+                        </div>
+                    </td>
+                    <td>
+                        <div style="display: flex; gap: 5px; flex-direction: column;">
+                            <a href="/reservations/create?classroom_id={{ id }}" class="btn btn-success btn-small">예약하기</a>
+                            <a href="/classrooms/{{ id }}/reservations" class="btn btn-primary btn-small">예약 현황</a>
+                        </div>
+                    </td>
+                    {% if user.role == "Admin" %}
+                    <td>
+                        <div class="actions">
+                            <a href="/classrooms/{{ id }}/edit" class="btn btn-warning btn-small">수정</a>
+                            <form method="POST" action="/classrooms/{{ id }}/delete" style="display: inline;" onsubmit="return confirm('정말 삭제하시겠습니까?');">
+                                <button type="submit" class="btn btn-danger btn-small">삭제</button>
+                            </form>
+                        </div>
+                    </td>
+                    {% endif %}
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        {% else %}
+        <div class="empty-state">
+            <h2>등록된 강의실이 없습니다.</h2>
+            {% if user.role == "Admin" %}
+            <p style="color: #666; margin: 20px 0;">첫 번째 강의실을 추가해보세요!</p>
+            <a href="/classrooms/create" class="btn btn-success">강의실 추가하기</a>
+            {% else %}
+            <p style="color: #666; margin: 20px 0;">등록된 강의실이 없습니다.</p>
+            {% endif %}
+        </div>
+        {% endif %}
+    </div>
+</body>
+</html>
+
